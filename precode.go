@@ -50,9 +50,9 @@ func getTasks(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write(resp)
+	_, _ = w.Write(resp)
 }
-func postTask(w http.ResponseWriter, r *http.Request) {
+func addTask(w http.ResponseWriter, r *http.Request) {
 	var task Task
 	var buf bytes.Buffer
 
@@ -68,30 +68,40 @@ func postTask(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 }
-func getTask(w http.ResponseWriter, r *http.Request) {
+func getId(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
+	if id == "" {
+		http.Error(w, "Not found Id task", http.StatusBadRequest)
+		return
+	}
 	task, ok := tasks[id]
 	if !ok {
-		http.Error(w, "Task not found", http.StatusBadRequest)
+		http.Error(w, "Not found Id task", http.StatusBadRequest)
 		return
 	}
 	resp, err := json.Marshal(task)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write(resp)
+	_, _ = w.Write(resp)
 }
 func deleteTask(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
+	if id == "" {
+		http.Error(w, "Not found Id task", http.StatusBadRequest)
+		return
+	}
 	_, ok := tasks[id]
 	if !ok {
 		http.Error(w, "Task not found", http.StatusBadRequest)
 		return
 	}
 	delete(tasks, id)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
 }
 
 func main() {
@@ -99,8 +109,8 @@ func main() {
 
 	// здесь регистрируйте ваши обработчики
 	r.Get("/tasks", getTasks)
-	r.Post("/tasks", postTask)
-	r.Get("/tasks/{id}", getTask)
+	r.Post("/tasks", addTask)
+	r.Get("/tasks/{id}", getId)
 	r.Delete("/tasks/{id}", deleteTask)
 
 	if err := http.ListenAndServe(":8080", r); err != nil {
