@@ -64,6 +64,11 @@ func addTask(w http.ResponseWriter, r *http.Request) {
 	if err = json.Unmarshal(buf.Bytes(), &task); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
+	_, ok := tasks[task.ID]
+	if ok {
+		http.Error(w, "Task already exists", http.StatusBadRequest)
+		return
+	}
 	tasks[task.ID] = task
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
